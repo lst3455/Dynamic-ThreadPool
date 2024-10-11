@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.example</groupId>
         <artifactId>Dynamic-ThreadPool</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
 
     <artifactId>Dynamic-ThreadPool-admin</artifactId>
@@ -92,7 +92,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>cn.bugstack.middleware.dynamic.thread.pool.Application</mainClass>
+                    <mainClass>cn.bugstack.middleware.dynamic.thread.pool.org.example.Application</mainClass>
                     <layout>JAR</layout>
                 </configuration>
             </plugin>
