@@ -3,8 +3,10 @@ package org.example.sdk.config;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.StringUtils;
 import org.example.sdk.domain.DynamicThreadPoolService;
+import org.example.sdk.domain.IDynamicThreadPoolService;
 import org.example.sdk.registry.IRegistry;
 import org.example.sdk.registry.redis.RedisRegistry;
+import org.example.sdk.trigger.job.ThreadPoolDataUploadJob;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.codec.JsonJacksonCodec;
@@ -18,8 +20,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
@@ -50,7 +50,7 @@ public class DynamicThreadPoolAutoConfig {
 
         RedissonClient redissonClient = Redisson.create(config);
 
-        logger.info("动态线程池，注册器（redis）链接初始化完成。{} {} {}", properties.getHost(), properties.getPoolSize(), !redissonClient.isShutdown());
+        logger.info("dynamic thread pool - redis registry initialize, {} {} {}", properties.getHost(), properties.getPoolSize(), !redissonClient.isShutdown());
 
         return redissonClient;
     }
@@ -70,5 +70,10 @@ public class DynamicThreadPoolAutoConfig {
 
         logger.info("dynamic thread pool - start, info:{}", JSON.toJSONString(threadPoolExecutorMap));
         return new DynamicThreadPoolService(applicationName, threadPoolExecutorMap);
+    }
+
+    @Bean
+    public ThreadPoolDataUploadJob threadPoolDataUploadJob(IDynamicThreadPoolService iDynamicThreadPoolService, IRegistry iRegistry){
+        return new ThreadPoolDataUploadJob(iDynamicThreadPoolService,iRegistry);
     }
 }
