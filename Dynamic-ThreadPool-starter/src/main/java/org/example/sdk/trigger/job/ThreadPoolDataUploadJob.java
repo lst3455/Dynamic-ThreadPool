@@ -29,8 +29,9 @@ public class ThreadPoolDataUploadJob {
     @Scheduled(cron = "0/20 * * * * ?")
     public void doUploadThreadPoolList(){
         List<ThreadPoolConfigEntity> threadPoolConfigEntityList = iDynamicThreadPoolService.queryThreadPoolList();
+        logger.info("dynamic thread pool - upload threadpool list start");
         iRegistry.uploadThreadPool(threadPoolConfigEntityList);
-        logger.info("dynamic thread pool - upload threadpool data, data:{}", JSON.toJSONString(threadPoolConfigEntityList));
+        logger.info("dynamic thread pool - upload threadpool list complete");
 
         for (ThreadPoolConfigEntity threadPoolConfigEntity : threadPoolConfigEntityList){
             iRegistry.uploadThreadPoolConfigParameter(threadPoolConfigEntity);

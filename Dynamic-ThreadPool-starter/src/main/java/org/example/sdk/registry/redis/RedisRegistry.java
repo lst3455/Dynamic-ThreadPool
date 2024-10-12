@@ -22,7 +22,9 @@ public class RedisRegistry implements IRegistry {
     @Override
     public void uploadThreadPool(List<ThreadPoolConfigEntity> threadPoolConfigEntityList) {
         RList<ThreadPoolConfigEntity> threadPoolConfigEntityRList = redissonClient.getList(RegistryVO.THREAD_POOL_CONFIG_PARAMETER_LIST_KEY.getKey());
-        threadPoolConfigEntityRList.addAll(threadPoolConfigEntityList); // todo try to reduce repeating add
+        for (ThreadPoolConfigEntity threadPoolConfigEntity : threadPoolConfigEntityList){
+            if (!threadPoolConfigEntityRList.contains(threadPoolConfigEntity)) threadPoolConfigEntityRList.add(threadPoolConfigEntity); // todo try to reduce repeating add
+        }
     }
 
     @Override
