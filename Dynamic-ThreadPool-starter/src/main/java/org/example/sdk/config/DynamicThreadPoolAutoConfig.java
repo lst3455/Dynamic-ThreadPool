@@ -81,8 +81,8 @@ public class DynamicThreadPoolAutoConfig {
             ThreadPoolConfigEntity threadPoolConfigEntity = redissonClient.<ThreadPoolConfigEntity>getBucket(RegistryVO.THREAD_POOL_CONFIG_PARAMETER_LIST_KEY.getKey() + "_" + applicationName + "_" + threadPoolKey).get();
             if (null == threadPoolConfigEntity) continue;
             ThreadPoolExecutor threadPoolExecutor = threadPoolExecutorMap.get(threadPoolKey);
-            threadPoolExecutor.setCorePoolSize(threadPoolConfigEntity.getCorePoolSize());
             threadPoolExecutor.setMaximumPoolSize(threadPoolConfigEntity.getMaximumPoolSize());
+            threadPoolExecutor.setCorePoolSize(threadPoolConfigEntity.getCorePoolSize());
         }
 
         logger.info("dynamic thread pool - start, info:{}", JSON.toJSONString(threadPoolExecutorMap));

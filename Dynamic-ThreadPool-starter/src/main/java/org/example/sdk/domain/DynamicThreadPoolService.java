@@ -72,8 +72,18 @@ public class DynamicThreadPoolService implements IDynamicThreadPoolService{
         ThreadPoolExecutor threadPoolExecutor = threadPoolExecutorMap.get(threadPoolConfigEntity.getThreadPoolName());
         if (null == threadPoolExecutor) return;
 
-        // Set parameters for adjusting core and maximum thread counts
-        threadPoolExecutor.setCorePoolSize(threadPoolConfigEntity.getCorePoolSize());
-        threadPoolExecutor.setMaximumPoolSize(threadPoolConfigEntity.getMaximumPoolSize());
+        if (threadPoolConfigEntity.getCorePoolSize() > threadPoolConfigEntity.getMaximumPoolSize()) {
+            logger.error("dynamic thread pool - updateThreadPoolConfig, corePoolSize greater than maxPoolSize is invalid");
+            return;
+        }
+
+        // Set parameters for adjusting core and maximum thread counts, take note for the update order in different scenario
+        if (threadPoolExecutor.getCorePoolSize() > threadPoolConfigEntity.getMaximumPoolSize()){
+            threadPoolExecutor.setCorePoolSize(threadPoolConfigEntity.getCorePoolSize());
+            threadPoolExecutor.setMaximumPoolSize(threadPoolConfigEntity.getMaximumPoolSize());
+        } else {
+            threadPoolExecutor.setMaximumPoolSize(threadPoolConfigEntity.getMaximumPoolSize());
+            threadPoolExecutor.setCorePoolSize(threadPoolConfigEntity.getCorePoolSize());
+        }
     }
 }
