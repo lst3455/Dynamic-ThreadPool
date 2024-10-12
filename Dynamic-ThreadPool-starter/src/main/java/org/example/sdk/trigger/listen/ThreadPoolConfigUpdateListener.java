@@ -4,7 +4,6 @@ import com.alibaba.fastjson2.JSON;
 import org.example.sdk.domain.IDynamicThreadPoolService;
 import org.example.sdk.domain.model.entity.ThreadPoolConfigEntity;
 import org.example.sdk.registry.IRegistry;
-import org.example.sdk.trigger.job.ThreadPoolDataUploadJob;
 import org.redisson.api.listener.MessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

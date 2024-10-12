@@ -4,10 +4,14 @@ import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.StringUtils;
 import org.example.sdk.domain.DynamicThreadPoolService;
 import org.example.sdk.domain.IDynamicThreadPoolService;
+import org.example.sdk.domain.model.entity.ThreadPoolConfigEntity;
+import org.example.sdk.domain.model.vo.RegistryVO;
 import org.example.sdk.registry.IRegistry;
 import org.example.sdk.registry.redis.RedisRegistry;
 import org.example.sdk.trigger.job.ThreadPoolDataUploadJob;
+import org.example.sdk.trigger.listen.ThreadPoolConfigUpdateListener;
 import org.redisson.Redisson;
+import org.redisson.api.RTopic;
 import org.redisson.api.RedissonClient;
 import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.config.Config;
@@ -20,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
@@ -28,6 +33,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class DynamicThreadPoolAutoConfig {
 
     private final Logger logger = LoggerFactory.getLogger(DynamicThreadPoolAutoConfig.class);
+
+    private String applicationName;
 
     @Bean("dynamicThreadRedissonClient")
     public RedissonClient redissonClient(DynamicThreadPoolAutoProperties properties) {
@@ -61,11 +68,21 @@ public class DynamicThreadPoolAutoConfig {
     }
 
     @Bean("dynamicThreadPoolService")
-    public DynamicThreadPoolService dynamicThreadPoolService(ApplicationContext applicationContext, Map<String, ThreadPoolExecutor> threadPoolExecutorMap){
-        String applicationName = applicationContext.getEnvironment().getProperty("spring.application.name");
+    public DynamicThreadPoolService dynamicThreadPoolService(ApplicationContext applicationContext, Map<String, ThreadPoolExecutor> threadPoolExecutorMap, RedissonClient redissonClient){
+        applicationName = applicationContext.getEnvironment().getProperty("spring.application.name");
         if (StringUtils.isBlank(applicationName)) {
             applicationName = "name can not find";
             logger.warn("dynamic thread pool - start, SpringBoot loss spring.application.name configuration");
+        }
+
+        // get redis cache first
+        Set<String> threadPoolKeys = threadPoolExecutorMap.keySet();
+        for (String threadPoolKey : threadPoolKeys) {
+            ThreadPoolConfigEntity threadPoolConfigEntity = redissonClient.<ThreadPoolConfigEntity>getBucket(RegistryVO.THREAD_POOL_CONFIG_PARAMETER_LIST_KEY.getKey() + "_" + applicationName + "_" + threadPoolKey).get();
+            if (null == threadPoolConfigEntity) continue;
+            ThreadPoolExecutor threadPoolExecutor = threadPoolExecutorMap.get(threadPoolKey);
+            threadPoolExecutor.setCorePoolSize(threadPoolConfigEntity.getCorePoolSize());
+            threadPoolExecutor.setMaximumPoolSize(threadPoolConfigEntity.getMaximumPoolSize());
         }
 
         logger.info("dynamic thread pool - start, info:{}", JSON.toJSONString(threadPoolExecutorMap));
@@ -75,5 +92,18 @@ public class DynamicThreadPoolAutoConfig {
     @Bean
     public ThreadPoolDataUploadJob threadPoolDataUploadJob(IDynamicThreadPoolService iDynamicThreadPoolService, IRegistry iRegistry){
         return new ThreadPoolDataUploadJob(iDynamicThreadPoolService,iRegistry);
+    }
+
+    @Bean
+    public ThreadPoolConfigUpdateListener threadPoolConfigAdjustListener(IDynamicThreadPoolService iDynamicThreadPoolService, IRegistry iRegistry) {
+        return new ThreadPoolConfigUpdateListener(iDynamicThreadPoolService, iRegistry);
+    }
+
+    @Bean
+    public RTopic threadPoolConfigUpdateListener(RedissonClient redissonClient, ThreadPoolConfigUpdateListener threadPoolConfigUpdateListener){
+        String cacheKey = RegistryVO.THREAD_POOL_CONFIG_PARAMETER_LIST_KEY.getKey() + "_" + applicationName;
+        RTopic topic = redissonClient.getTopic(cacheKey);
+        topic.addListener(ThreadPoolConfigEntity.class, threadPoolConfigUpdateListener);
+        return topic;
     }
 }
